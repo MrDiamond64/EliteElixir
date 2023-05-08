@@ -15,3 +15,6 @@ Using this exploit, you can:
 # How to send the packets
 Sub clients have special packet IDs served for them. It is the normal packet id plus 4096. (Example: A text packet has the id of 9, so it would have the packet id of 4105)
 For sub client 2 you will have to add 8192 to the packet ID, and for sub client 3 you will add 12288 to the packet id.
+
+# Warning
+This tool is reserved for EDUCATIONAL PURPOSES ONLY. I do not endorse the usage of this tool and I will not be held liable for the actions caused by this tool. It is merely a way to show that this type of stuff is possible, and so the affected software (in this case, Bedrock Dedicated Server) can patch such exploit.
