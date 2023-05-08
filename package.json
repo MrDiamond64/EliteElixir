@@ -1,0 +1,24 @@
+{
+  "name": "elite-elixir",
+  "version": "1.2.1",
+  "description": "get balls deep in mojang",
+  "main": "index.js",
+  "scripts": {
+    "main": "node ."
+  },
+  "keywords": [],
+  "author": "MrDiamond64",
+  "license": "ISC",
+  "dependencies": {
+    "bedrock-protocol": "^3.28.0",
+    "jsonwebtoken": "^9.0.0",
+    "minecraft-data": "^3.33.0",
+    "node-fetch": "^2.6.9",
+    "prismarine-auth": "^2.2.0",
+    "prompt-sync": "^4.2.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.22.0"
+  }
+}

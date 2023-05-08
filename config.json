@@ -1,0 +1,6 @@
+{
+  "opAll": true,
+  "botName": "PointNetwork341",
+  "commands": ["/execute at @a run summon wither"],
+  "messages": []
+}
