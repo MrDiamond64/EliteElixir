@@ -44,12 +44,9 @@ fs.writeFileSync("./node_modules/minecraft-data/minecraft-data/data/bedrock/1.19
 
 	const allRealms = (await worlds.json()).servers;
 	
-	allRealms.sort((a, b) => a.id - b.id);
+	allRealms.sort();
 
 	for(i in allRealms) {
-		const realm = allRealms[i];
-
-		for(i in allRealms) {
 		const realm = allRealms[i];
 
 		if (realm.state === "CLOSED" || realm.expired) {
