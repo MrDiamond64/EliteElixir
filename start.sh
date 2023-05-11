@@ -1,4 +1,4 @@
-echo "NoMoreFairPlay // created by ussr (discord id: 952438450441838592) | Uptime: 0 seconds - Total Crashes: 0"
+echo "EliteElixir // created by ussr (discord id: 952069372069937172)"
 
 if [ ! -d "./authCache/" ]; then
   mkdir authCache
