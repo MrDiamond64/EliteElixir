@@ -5,90 +5,90 @@ const { Authflow, Titles } = require("prismarine-auth");
 const { main } = require("./payload.js");
 
 const flow = new Authflow(undefined, "./authCache", {
-	flow: "live",
-	authTitle: Titles.MinecraftNintendoSwitch,
-	deviceType: "Nintendo",
-	doSisuAuth: true
+    flow: "live",
+    authTitle: Titles.MinecraftNintendoSwitch,
+    deviceType: "Nintendo",
+    doSisuAuth: true
 });
 
 const realm_api_headers = {
-	"Accept": "*/*",
-	"authorization": "",
-	"charset": "utf-8",
-	"client-ref": "8582b58a5cb47d5beee984d20ee8995c9a50a3f1",
-	"client-version": "1.19.70",
-	"content-type": "application/json",
-	"user-agent": "MCPE/UWP",
-	"Accept-Language": "en-CA",
-	"Accept-Encoding": "gzip, deflate, br",
-	"Host": "pocket.realms.minecraft.net",
-	"Connection": "Keep-Alive"
+    "Accept": "*/*",
+    "authorization": "",
+    "charset": "utf-8",
+    "client-ref": "8582b58a5cb47d5beee984d20ee8995c9a50a3f1",
+    "client-version": "1.19.70",
+    "content-type": "application/json",
+    "user-agent": "MCPE/UWP",
+    "Accept-Language": "en-CA",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Host": "pocket.realms.minecraft.net",
+    "Connection": "Keep-Alive"
 };
 
 const protocol = require("./data/protocol.json");
 fs.writeFileSync("./node_modules/minecraft-data/minecraft-data/data/bedrock/1.19.80/protocol.json", JSON.stringify(protocol));
 
 (async () => {
-	const xboxToken = await flow.getXboxToken("https://pocket.realms.minecraft.net/")
-		.catch((err) => {
-			console.log(err);
-			process.exit();
-	});
+    const xboxToken = await flow.getXboxToken("https://pocket.realms.minecraft.net/")
+        .catch((err) => {
+            console.log(err);
+            process.exit();
+        });
 
-	realm_api_headers.authorization = `XBL3.0 x=${xboxToken.userHash};${xboxToken.XSTSToken}`;
+    realm_api_headers.authorization = `XBL3.0 x=${xboxToken.userHash};${xboxToken.XSTSToken}`;
 
-	const worlds = await fetch("https://pocket.realms.minecraft.net/worlds", {
-		method: "GET",
-		headers: realm_api_headers
-	});
+    const worlds = await fetch("https://pocket.realms.minecraft.net/worlds", {
+        method: "GET",
+        headers: realm_api_headers
+    });
 
-	const allRealms = (await worlds.json()).servers;
-	
-	allRealms.sort((a, b) => a.id - b.id);
+    const allRealms = (await worlds.json()).servers;
 
-	for(const i in allRealms) {
-		const realm = allRealms[i];
+    allRealms.sort((a, b) => a.id - b.id);
 
-		if(realm.state === "CLOSED" || realm.expired) continue;
+    for (const i in allRealms) {
+        const realm = allRealms[i];
 
-		console.log(`${Number(i) + 1}. ${realm.name}`);
-	}
+        if (realm.state === "CLOSED" || realm.expired) continue;
 
-	const selection = Number(prompt("Please type in the number for the realm, or the realm ID: "));
+        console.log(`${Number(i) + 1}. ${realm.name}`);
+    }
 
-	let realm = {};
-	if(selection < 10000) {
-		realm = allRealms[selection - 1];
-	} else {
-		realm = allRealms.find(realmData => realmData.id === selection);
-	}
+    const selection = Number(prompt("Please type in the number for the realm, or the realm ID: "));
 
-	if(!realm) {
-		console.log("Invalid choice.");
-		process.exit(0);
-	}
-	
-	const response = await fetch(`https://pocket.realms.minecraft.net/worlds/${realm.id}/join`, {
-		method: "GET",
-		headers: realm_api_headers
-	})
-	.catch(() => {});
+    let realm = {};
+    if (selection < 10000) {
+        realm = allRealms[selection - 1];
+    } else {
+        realm = allRealms.find(realmData => realmData.id === selection);
+    }
 
-	if(!response || (response.status !== 200 && response.status !== 403)) {
-		console.log(response?.status);
-		console.log(await response?.text());
-		process.exit(0);
-	}
+    if (!realm) {
+        console.log("Invalid choice.");
+        process.exit(0);
+    }
 
-	const realmIP = await response.json();
+    const response = await fetch(`https://pocket.realms.minecraft.net/worlds/${realm.id}/join`, {
+            method: "GET",
+            headers: realm_api_headers
+        })
+        .catch(() => {});
 
-	if(realmIP.errorMsg) {
-		console.log(realmIP.errorMsg);
-		process.exit(0);
-	}
+    if (!response || (response.status !== 200 && response.status !== 403)) {
+        console.log(response?.status);
+        console.log(await response?.text());
+        process.exit(0);
+    }
 
-	realm.ip = realmIP.address.substring(0, realmIP.address.indexOf(':'));
-	realm.port = Number(realmIP.address.substring(realmIP.address.indexOf(':') + 1));
+    const realmIP = await response.json();
 
-	main(realm);
+    if (realmIP.errorMsg) {
+        console.log(realmIP.errorMsg);
+        process.exit(0);
+    }
+
+    realm.ip = realmIP.address.substring(0, realmIP.address.indexOf(':'));
+    realm.port = Number(realmIP.address.substring(realmIP.address.indexOf(':') + 1));
+
+    main(realm);
 })();
