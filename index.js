@@ -12,16 +12,16 @@ const flow = new Authflow(undefined, "./authCache", {
 });
 
 const realm_api_headers = {
-    "Accept": "*/*",
-    "authorization": "",
-    "charset": "utf-8",
-    "client-ref": "8582b58a5cb47d5beee984d20ee8995c9a50a3f1",
-    "client-version": "1.19.70",
-    "content-type": "application/json",
-    "user-agent": "MCPE/UWP",
-    "Accept-Language": "en-CA",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Host": "pocket.realms.minecraft.net",
+	"Accept": "*/*",
+	"authorization": "",
+	"charset": "utf-8",
+	"client-ref": "2606f6a1a1e3ecf907cb776d138dac765c5ba3ff",
+	"client-version": "1.19.81",
+	"content-type": "application/json",
+	"user-agent": "MCPE/UWP",
+	"Accept-Language": "en-CA",
+	"Accept-Encoding": "gzip, deflate, br",
+	"Host": "pocket.realms.minecraft.net",
     "Connection": "Keep-Alive"
 };
 
