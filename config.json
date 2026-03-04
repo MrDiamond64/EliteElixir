@@ -1,6 +1,9 @@
 {
-  "opAll": true,
-  "botName": "PointNetwork341",
-  "commands": ["/execute at @a run summon wither"],
-  "messages": []
+	"opAll": true,
+	"commands": [
+		"/execute at @a run summon wither"
+	],
+	"messages": [
+		"This is a demonstration of EliteElixir, a user impersonation exploit in Bedrock Dedicated Server. https://github.com/MrDiamond64/EliteElixir"
+	]
 }
