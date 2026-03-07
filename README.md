@@ -1,6 +1,8 @@
 # EliteElixir
 The SubClientLogin packet handler in [Bedrock Dedicated Server](https://minecraft.wiki/w/Bedrock_Dedicated_Server) is vulnerable to various exploits such as crash exploits leading to [denial-of-service attacks](https://en.wikipedia.org/wiki/Denial-of-service_attack), and a user impersonation exploit which can lead to [privilege escalation](https://en.wikipedia.org/wiki/Privilege_escalation). These exploits can be utilized by an authenticated user, who is on the server's whitelist and has permission to join the server.
 
+These exploits have been tested to work on Minecraft Bedrock versions 1.16.201, 1.17.11, 1.18.30, and 1.19.80, and work until the versions where they have been patched. It is assumed the exploits have existed since [Beta 1.2.0.2](https://minecraft.wiki/w/Bedrock_Edition_beta_1.2.0.2) released in July 31, 2017 when split-screen support was initially implemented.
+
 This repository will include an explanation of the exploit, a working proof-of-concept exploit tool which can be used to demonstrate the exploit on affected versions of BDS, and potential patches and remedies a server owner can take to protect themselves from the exploit.
 
 # The Minecraft Bedrock Protocol
@@ -41,10 +43,10 @@ When BDS recieves the SubClientLogin packet, it first ensures that another sub-c
  - If the JWTs in the certificate chain is invalid (such as the JWT consisting of invalid base64 data, or the certificate being expired), then the **server will outright crash**.
  - **There is no checks to determine if the JWTs in the certificate chain was actually signed by Mojang's private key**.
 
-This means that a player inside a Bedrock Dedicated Server may be able to crash the server by sending an invalid SubClientLogin packet, or send SubClientLogin packets with arbitrary XUIDs, or **XUIDS of other players, which allows a player to log in as other people**. In summary, the above flaws in the SubClientLogin packet handler can lead to:
- - Spoofing Account Gamertags
- - Spoofing Account XUIDs
- - Logging in as other players
+This means that a player inside a Bedrock Dedicated Server may be able to crash the server by sending an invalid SubClientLogin packet, or send SubClientLogin packets with arbitrary XUIDs, or **XUIDS of other players, which allows a player to log in as other people**. These flaws in the SubClientLogin packet handler may allow a malicious player to:
+ - Spoof Account Gamertags
+ - Spoof Account XUIDs
+ - Log in as other players
    - Send any chat messages on a player's behalf
    - Send any commands on a player's behalf
    - Steal all the player's items
@@ -56,14 +58,14 @@ This means that a player inside a Bedrock Dedicated Server may be able to crash 
 Now that we have established that the SubClientLogin packet has no checks against whether the data in the certificate chain was actually signed by Mojang's private key, or that the data is even valid in the first place, we can now weaponize this for a ForceOP exploit. Since XUIDs are used to identify whose saved data belongs to who, we can send a SubClientLogin packet with a self-signed JWT containing the XUID of an Operator on the server. The server will spawn in a new sub-client player with the operator's XUID, which means our subclient will have Operator permissions. We can make our subclient send RequestPermissions packets to give our client Operator.
 
 # Proof of Concept
-To demonstrate the ForceOP exploit, this repository includes a PoC which uses the [bedrock-protocol](https://www.npmjs.com/package/bedrock-protocol) NPM package in order to connect to Minecraft Bedrock servers and send packets. This PoC has two operating modes which will depend if the exploit should be attempted on a Bedrock Dedicated Server or a Minecraft Realm. The first operating mode can be used by running `node . <IP> <PORT> <Target XUID> <offline>` in the terminal. The IP and PORT parameters are used to identify which BDS server to connect to, the Target XUID paramter is the player we should log into, and the offline parameter is used to log into the server as an offline account so we do not have to log into Xbox Live.
+To demonstrate the ForceOP exploit, this repository includes a PoC which uses the [bedrock-protocol](https://www.npmjs.com/package/bedrock-protocol) NPM package in order to connect to Minecraft Bedrock servers and send packets. This PoC has two operating modes which will depend if the exploit should be attempted on a Bedrock Dedicated Server or a Minecraft Realm. The first operating mode can be used by running `node . <IP> <PORT> <Target XUID> <offline>` in the terminal. The IP and PORT parameters are used to identify which BDS server to connect to, the Target XUID paramter should be the XUID of any player with Operator status on the server, and the offline parameter is used to log into the server as an offline account so we do not have to log into Xbox Live.
 
-The second operating mode can be used to join Realms, it can be used by running `node src/realms.js`. Uponing running the `realm.js` script, you will be asked to log into an Xbox Live account through SISU authentication. This is used to get a list of Realms that you are inside, and be able the IP of the realm. Once authenticated, a list of Realms you are inside will be displayed along with an ID. You can type in the ID of the realm you want to connect to, which will attempt the exploit on that Realm.
+The second operating mode can be used to join Realms, it can be used by running `node src/realms.js`. Uponing running the `realm.js` script, you will be asked to log into an Xbox Live account through SISU authentication. This is used to get a list of Realms that you are inside, and be able the IP of the realm. Once authenticated, a list of Realms you are inside will be displayed along with an ID. You can type in the ID of the realm you want to connect to, which will attempt the exploit on that Realm. Unlike the first operating mode where we need to provide the XUID of a player with Operator status, we default to Realm owner's XUID as they are guaranteed to have Operator status.
 
 When using this tool, you may notice that you will get disconnected with the disconnection reason of `disconnectionScreen.serverIdConflict`. This error usually happens when the player we are trying to impersonate is already in the server. You can get around this by setting the bot's name in the login chain to match the player's actual name (instead of the default `ImpersonatedUser`) which will get around the disconnection message. To keep the PoC simple, we do not include this part in the exploit.
 
 # Protecting Yourself From SubClientLogin Exploits
-Mojang has patched the user impersonation exploit (and thus ForceOP) in 1.19.80. The crash exploit involving invalid JWTs was patched by Mojang in 1.20.0. It is highly recommended that you go to https://www.minecraft.net/en-us/download/server/bedrock and download a modern version of BDS which contains patches for not just SubClientLogin related exploits, but various other exploits impacting older BDS versions. Incase you are unable to update your server to newer versions, you can apply remedies or patches depending on the server software you are using
+Mojang has patched the user impersonation exploit (and thus ForceOP) in 1.19.83. The crash exploit involving invalid JWTs was patched by Mojang in 1.20.0. It is highly recommended that you go to https://www.minecraft.net/en-us/download/server/bedrock and download a modern version of BDS which contains patches for not just SubClientLogin related exploits, but various other exploits impacting older BDS versions. Incase you are unable to update your server to newer versions, you can apply remedies or patches depending on the server software you are using.
 
 ## BDS
 Install [LiteLoaderBDS](https://github.com/LiteLDev/LiteLoaderBDS), a plugin loader for BDS that adds a modding API to Bedrock Dedicated Server, and then follow the instructions for LiteLoaderBDS.

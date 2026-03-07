@@ -1,6 +1,7 @@
 {
 	"opAll": true,
 	"commands": [
+		"/execute @a ~~~ summon wither",
 		"/execute at @a run summon wither"
 	],
 	"messages": [

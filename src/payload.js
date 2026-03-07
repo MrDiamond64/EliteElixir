@@ -44,13 +44,18 @@ class Payload {
 		this.createSubClient();
 
 		const records = playerList.records.records;
-
 		for(const player of records) {
 			if(!config.opAll && player.username != this.client.username) continue;
 
-			console.log(`Updating ${player.username}'s permissions to have Operator`);
+			// In 1.19.10 the AdventureSettings packed was removed and was replaced by RequestPermissions
+			if(this.client.versionGreaterThanOrEqualTo("1.19.10")) {
+				console.log(`Sending RequestPermissions packet to give ${player.username} Operator`);
+				this.sendRequestPermissions(player.entity_unique_id, 4);
+			} else {
+				console.log(`Sending AdventureSettings packet to give ${player.username} Operator`);
+				this.sendAdventureSettings(player.entity_unique_id);
+			}
 
-			this.sendRequestPermissions(player.entity_unique_id, 4);
 		}
 
 		console.log("Running final actions...");
@@ -151,9 +156,54 @@ class Payload {
 		this.client.sendBuffer(packetHeader.toBuffer());
 	}
 
+	sendAdventureSettings(uniqueId, permissionLevel = 2) {
+		const packetHeader = new BinaryStream();
+		packetHeader.writeVarInt(this.createPacketId(55, 0, this.subclientId));
+
+		const packetData = new BinaryStream();
+		// Player Abilities
+		// We can also use this to make other players no-clip
+		packetData.writeVarInt(
+			// (1 << 0)  | // World Immutable
+			// (1 << 1)  | // No PvP
+			(1 << 5)       // Auto Jump
+			// (1 << 6)  | // Allow Flight
+			// (1 << 7)  | // No Clip
+			// (1 << 8)  | // World Builder
+			// (1 << 9)  | // Flying
+			// (1 << 10) | // Muted
+		);
+		/*
+		enum CommandPermissionLevel : unsigned char {
+			Any = 0x0000,
+			GameDirectors = 0x0001,
+			Admin = 0x0002,
+			Host = 0x0003,
+			Owner = 0x0004,
+			Internal = 0x0005,
+		};
+		*/
+		packetData.writeVarInt(0) // CommandPermissionLevel
+		packetData.writeVarInt(447); // Permissions, unknown
+		/*
+		enum PlayerPermissionLevel : unsigned char {
+			Visitor = 0x0000,
+			Member = 0x0001,
+			Operator = 0x0002,
+			Custom = 0x0003,
+		};
+		*/
+		packetData.writeVarInt(permissionLevel); // PlayerPermissionLevel
+		packetData.writeVarInt(0); // Abilities, unknown
+		packetData.writeBigInt64LE(uniqueId); // Unique ID
+
+		packetHeader.writeBuffer(packetData.toBuffer());
+		this.client.sendBuffer(packetHeader.toBuffer());
+	}
+
 	sendCommandRequest(command) {
 		const packetHeader = new BinaryStream();
-		packetHeader.writeVarInt(this.createPacketId(77, 0, 1));
+		packetHeader.writeVarInt(this.createPacketId(77, 0, this.subclientId));
 
 		const packetData = new BinaryStream();
 		packetData.writeVarintString(command); // Command
@@ -170,7 +220,11 @@ class Payload {
 		packetData.writeVarintString(""); // Request ID
 
 		packetData.writeBool(false); // Internal
-		packetData.writeVarInt(66); // Version
+
+		// The version field in the CommandRequest packet was added in 1.19.60
+		if(this.client.versionGreaterThanOrEqualTo("1.19.60")) {
+			packetData.writeVarInt(66); // Version
+		}
 
 		packetHeader.writeBuffer(packetData.toBuffer());
 		this.client.sendBuffer(packetHeader.toBuffer());
