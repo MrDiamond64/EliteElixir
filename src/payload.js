@@ -43,9 +43,11 @@ class Payload {
 
 		this.createSubClient();
 
+		console.log("Sent the SubClientLogin packet, we can now give players Operator persmissions");
+
 		const records = playerList.records.records;
 		for(const player of records) {
-			if(!config.opAll && player.username != this.client.username) continue;
+			if(!config.opAll && player.username !== this.client.username) continue;
 
 			// In 1.19.10 the AdventureSettings packed was removed and was replaced by RequestPermissions
 			if(this.client.versionGreaterThanOrEqualTo("1.19.10")) {
@@ -55,7 +57,6 @@ class Payload {
 				console.log(`Sending AdventureSettings packet to give ${player.username} Operator`);
 				this.sendAdventureSettings(player.entity_unique_id);
 			}
-
 		}
 
 		console.log("Running final actions...");

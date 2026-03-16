@@ -1,13 +1,6 @@
 const fetch = require("node-fetch");
 const { Authflow, Titles } = require("prismarine-auth");
 
-const flow = new Authflow(undefined, "./authCache/", {
-	flow: "live",
-	authTitle: Titles.MinecraftNintendoSwitch,
-	deviceType: "Nintendo",
-	doSisuAuth: true
-});
-
 class RealmsAPI {
 	BASE_URL = "https://pocket.realms.minecraft.net/";
 
@@ -23,10 +16,17 @@ class RealmsAPI {
 			"Accept-Encoding": "gzip, deflate, br",
 			"Connection": "Keep-Alive"
 		};
+
+		this.flow = new Authflow(undefined, "./authCache/", {
+			flow: "live",
+			authTitle: Titles.MinecraftNintendoSwitch,
+			deviceType: "Nintendo",
+			doSisuAuth: true
+		});
 	}
 
 	async auth() {
-		const xboxToken = await flow.getXboxToken(this.BASE_URL);
+		const xboxToken = await this.flow.getXboxToken(this.BASE_URL);
 		this.headers.authorization = `XBL3.0 x=${xboxToken.userHash};${xboxToken.XSTSToken}`;
 	}
 
