@@ -211,20 +211,14 @@ class Payload {
 
 		// Command Origin
 		packetData.writeVarInt(0); // Origin Source
-
-		// UUIDs are 128 bits, so in the Minecraft Bedrock Protocol they are divided between two Int64s
-		// UUID.parse returns a Uint8Array with 16 elements, but we can still write each element as a UInt8 without any problems
-		const uuid = UUID.parse(UUID.v4());
-		for(const u8 of uuid) {
-			packetData.writeUInt8(u8); // Each part of the UUID
-		}
+		packetData.writeUuid(UUID.v4()); // UUID
 		packetData.writeVarintString(""); // Request ID
 
 		packetData.writeBool(false); // Internal
 
 		// The version field in the CommandRequest packet was added in 1.19.60
 		if(this.client.versionGreaterThanOrEqualTo("1.19.60")) {
-			packetData.writeVarInt(66); // Version
+			packetData.writeVarInt(66); // Command Engine version
 		}
 
 		packetHeader.writeBuffer(packetData.toBuffer());
