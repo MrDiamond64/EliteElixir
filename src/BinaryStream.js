@@ -18,13 +18,17 @@ class BinaryStream extends SmartBuffer {
 	}
 
 	writeVarintString(string) {
-		this.writeVarInt(string.length); // Length
+		const byteLength = Buffer.byteLength(string, "utf8");
+
+		this.writeVarInt(byteLength); // Length
 		this.writeString(string);
 	}
 
 	// LoginPacket and SubClientLoginPacket expect a string with a length value as a little endian integer
 	writeLEString(string) {
-		this.writeInt32LE(string.length); // Length
+		const byteLength = Buffer.byteLength(string, "utf8");
+
+		this.writeInt32LE(byteLength); // Length
 		this.writeString(string);
 	}
 
