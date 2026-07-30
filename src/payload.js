@@ -127,87 +127,80 @@ class Payload {
 
 		const clientChain = JWT.sign(userChain, privateKeyPEM, JWTOptions);
 
-		const packetHeader = new BinaryStream();
-		packetHeader.writeVarInt(this.createPacketId(PacketIds.SUB_CLIENT_LOGIN, 0, this.subclientId));
+		const packet = new BinaryStream();
+		packet.writeVarInt(this.createPacketId(PacketIds.SUB_CLIENT_LOGIN, 0, this.subclientId));
 
-		const packetData = new BinaryStream();
-		packetData.writeLEString(JSON.stringify({ chain }));
-		packetData.writeLEString(clientChain);
+		const webToken = new BinaryStream();
+		webToken.writeLEString(JSON.stringify({ chain }));
+		webToken.writeLEString(clientChain);
 
-		packetHeader.writeVarInt(packetData.length);
-		packetHeader.writeBuffer(packetData.toBuffer());
+		packet.writeVarInt(webToken.length);
+		packet.writeBuffer(webToken.toBuffer());
 
-		this.client.sendBuffer(packetHeader.toBuffer());
+		this.client.sendBuffer(packet.toBuffer());
 	}
 
 	sendText(message) {
-		const packetHeader = new BinaryStream();
-		packetHeader.writeVarInt(this.createPacketId(PacketIds.TEXT, 0, this.subclientId));
+		const packet = new BinaryStream();
+		packet.writeVarInt(this.createPacketId(PacketIds.TEXT, 0, this.subclientId));
 
-		const packetData = new BinaryStream();
-		packetData.writeUInt8(TextType.CHAT); // Chat Type
-		packetData.writeBool(false); // Needs Translation
-		packetData.writeVarintString(this.botName); // Username
-		packetData.writeVarintString(message); // Message
-		packetData.writeVarintString(this.targetXuid); // XUID
-		packetData.writeVarintString(""); // Platform Chat ID
+		packet.writeUInt8(TextType.CHAT); // Chat Type
+		packet.writeBool(false); // Needs Translation
+		packet.writeVarintString(this.botName); // Username
+		packet.writeVarintString(message); // Message
+		packet.writeVarintString(this.targetXuid); // XUID
+		packet.writeVarintString(""); // Platform Chat ID
 
-		packetHeader.writeBuffer(packetData.toBuffer());
-		this.client.sendBuffer(packetHeader.toBuffer());
+		this.client.sendBuffer(packet.toBuffer());
 	}
 
 	sendAdventureSettings(uniqueId, permissionLevel = PermissionLevel.OPERATOR) {
-		const packetHeader = new BinaryStream();
-		packetHeader.writeVarInt(this.createPacketId(PacketIds.ADVENTURE_SETTINGS, 0, this.subclientId));
+		const packet = new BinaryStream();
+		packet.writeVarInt(this.createPacketId(PacketIds.ADVENTURE_SETTINGS, 0, this.subclientId));
 
-		const packetData = new BinaryStream();
 		// Player Abilities
 		// We can also use this to make other players no-clip
-		packetData.writeVarInt(
+		packet.writeVarInt(
 			AdventureFlags.AUTO_JUMP
 		);
-		packetData.writeVarInt(CommandPermissionLevel.GAME_MASTER) // CommandPermissionLevel
-		packetData.writeVarInt(447); // Permissions, unknown
-		packetData.writeVarInt(permissionLevel); // PlayerPermissionLevel
-		packetData.writeVarInt(0); // Abilities, unknown
-		packetData.writeBigInt64LE(uniqueId); // Unique ID
+		packet.writeVarInt(CommandPermissionLevel.GAME_MASTER) // CommandPermissionLevel
+		packet.writeVarInt(447); // Permissions, unknown
+		packet.writeVarInt(permissionLevel); // PlayerPermissionLevel
+		packet.writeVarInt(0); // Abilities, unknown
+		packet.writeBigInt64LE(uniqueId); // Unique ID
 
-		packetHeader.writeBuffer(packetData.toBuffer());
-		this.client.sendBuffer(packetHeader.toBuffer());
+		this.client.sendBuffer(packet.toBuffer());
 	}
 
 	sendCommandRequest(command) {
-		const packetHeader = new BinaryStream();
-		packetHeader.writeVarInt(this.createPacketId(PacketIds.COMMAND_REQUEST, 0, this.subclientId));
+		const packet = new BinaryStream();
+		packet.writeVarInt(this.createPacketId(PacketIds.COMMAND_REQUEST, 0, this.subclientId));
 
-		const packetData = new BinaryStream();
-		packetData.writeVarintString(command); // Command
+		packet.writeVarintString(command); // Command
 
 		// Command Origin
-		packetData.writeVarInt(CommandOriginType.PLAYER); // Origin Source
-		packetData.writeUuid(UUID.v4()); // UUID
-		packetData.writeVarintString(""); // Request ID
+		packet.writeVarInt(CommandOriginType.PLAYER); // Origin Source
+		packet.writeUuid(UUID.v4()); // UUID
+		packet.writeVarintString(""); // Request ID
 
-		packetData.writeBool(false); // Internal
+		packet.writeBool(false); // Internal
 
 		// The version field in the CommandRequest packet was added in 1.19.60
 		if(this.client.versionGreaterThanOrEqualTo("1.19.60")) {
-			packetData.writeVarInt(66); // Command Engine version
+			packet.writeVarInt(66); // Command Engine version
 		}
 
-		packetHeader.writeBuffer(packetData.toBuffer());
-		this.client.sendBuffer(packetHeader.toBuffer());
+		this.client.sendBuffer(packet.toBuffer());
 	}
 
 	sendRequestPermissions(uniqueId, permissionLevel = 4) {
-		const packetHeader = new BinaryStream();
-		packetHeader.writeVarInt(this.createPacketId(PacketIds.REQUEST_PERMISSIONS, 0, this.subclientId));
+		const packet = new BinaryStream();
+		packet.writeVarInt(this.createPacketId(PacketIds.REQUEST_PERMISSIONS, 0, this.subclientId));
 
-		const packetData = new BinaryStream();
-		packetData.writeBigInt64LE(uniqueId); // Unique ID
-		packetData.writeVarInt(permissionLevel); // Permission level, values here do not match the values of the PermissionLevel enum
+		packet.writeBigInt64LE(uniqueId); // Unique ID
+		packet.writeVarInt(permissionLevel); // Permission level, values here do not match the values of the PermissionLevel enum
 		// Bitfield representation of available abilities
-		packetData.writeUInt16LE(
+		packet.writeUInt16LE(
 			PermissionFlags.BUILD |
 			PermissionFlags.MINE |
 			PermissionFlags.DOORS_AND_SWITCHES |
@@ -218,8 +211,7 @@ class Payload {
 			PermissionFlags.TELEPORT
 		);
 
-		packetHeader.writeBuffer(packetData.toBuffer());
-		this.client.sendBuffer(packetHeader.toBuffer());
+		this.client.sendBuffer(packet.toBuffer());
 	}
 
 	createPacketId(packetId, targetId = 0, senderId = 0) {
