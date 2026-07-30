@@ -2,6 +2,7 @@ const JWT = require("jsonwebtoken");
 const crypto = require("crypto");
 const UUID = require("uuid");
 const { createClient } = require("bedrock-protocol");
+const { AdventureFlags, CommandOriginType, CommandPermissionLevel, DeviceOS, InputModes, PacketIds, PermissionFlags, PermissionLevel, TextType } = require("./constants.js");
 const BinaryStream = require("./BinaryStream.js");
 const config = require("../config.json");
 
@@ -43,7 +44,7 @@ class Payload {
 
 		this.createSubClient();
 
-		console.log("Sent the SubClientLogin packet, we can now give players Operator persmissions");
+		console.log("Sent the SubClientLogin packet, we can now give players Operator permissions");
 
 		const records = playerList.records.records;
 		for(const player of records) {
@@ -110,10 +111,10 @@ class Payload {
 			...steveSkin,
 
 			ClientRandomId: Date.now(),
-			CurrentInputMode: 1,
-			DefaultInputMode: 1,
+			CurrentInputMode: InputModes.MOUSE,
+			DefaultInputMode: InputModes.MOUSE,
 			DeviceID: UUID.v4(),
-			DeviceOS: 7,
+			DeviceOS: DeviceOS.WINDOWS_10,
 			PlatformOfflineId: "",
 			PlatformOnlineId: "",
 			PlatformUserId: UUID.v4(),
@@ -127,8 +128,7 @@ class Payload {
 		const clientChain = JWT.sign(userChain, privateKeyPEM, JWTOptions);
 
 		const packetHeader = new BinaryStream();
-		// Send SubClientLogin packet (ID 94) for sub-client ID 1
-		packetHeader.writeVarInt(this.createPacketId(94, 0, this.subclientId));
+		packetHeader.writeVarInt(this.createPacketId(PacketIds.SUB_CLIENT_LOGIN, 0, this.subclientId));
 
 		const packetData = new BinaryStream();
 		packetData.writeLEString(JSON.stringify({ chain }));
@@ -142,11 +142,10 @@ class Payload {
 
 	sendText(message) {
 		const packetHeader = new BinaryStream();
-		// Send Text packet (ID 9) for sub-client ID 1
-		packetHeader.writeVarInt(this.createPacketId(9, 0, this.subclientId));
+		packetHeader.writeVarInt(this.createPacketId(PacketIds.TEXT, 0, this.subclientId));
 
 		const packetData = new BinaryStream();
-		packetData.writeUInt8(1); // Chat Type
+		packetData.writeUInt8(TextType.CHAT); // Chat Type
 		packetData.writeBool(false); // Needs Translation
 		packetData.writeVarintString(this.botName); // Username
 		packetData.writeVarintString(message); // Message
@@ -157,43 +156,18 @@ class Payload {
 		this.client.sendBuffer(packetHeader.toBuffer());
 	}
 
-	sendAdventureSettings(uniqueId, permissionLevel = 2) {
+	sendAdventureSettings(uniqueId, permissionLevel = PermissionLevel.OPERATOR) {
 		const packetHeader = new BinaryStream();
-		packetHeader.writeVarInt(this.createPacketId(55, 0, this.subclientId));
+		packetHeader.writeVarInt(this.createPacketId(PacketIds.ADVENTURE_SETTINGS, 0, this.subclientId));
 
 		const packetData = new BinaryStream();
 		// Player Abilities
 		// We can also use this to make other players no-clip
 		packetData.writeVarInt(
-			// (1 << 0)  | // World Immutable
-			// (1 << 1)  | // No PvP
-			(1 << 5)       // Auto Jump
-			// (1 << 6)  | // Allow Flight
-			// (1 << 7)  | // No Clip
-			// (1 << 8)  | // World Builder
-			// (1 << 9)  | // Flying
-			// (1 << 10) | // Muted
+			AdventureFlags.AUTO_JUMP
 		);
-		/*
-		enum CommandPermissionLevel : unsigned char {
-			Any = 0x0000,
-			GameDirectors = 0x0001,
-			Admin = 0x0002,
-			Host = 0x0003,
-			Owner = 0x0004,
-			Internal = 0x0005,
-		};
-		*/
-		packetData.writeVarInt(0) // CommandPermissionLevel
+		packetData.writeVarInt(CommandPermissionLevel.GAME_MASTER) // CommandPermissionLevel
 		packetData.writeVarInt(447); // Permissions, unknown
-		/*
-		enum PlayerPermissionLevel : unsigned char {
-			Visitor = 0x0000,
-			Member = 0x0001,
-			Operator = 0x0002,
-			Custom = 0x0003,
-		};
-		*/
 		packetData.writeVarInt(permissionLevel); // PlayerPermissionLevel
 		packetData.writeVarInt(0); // Abilities, unknown
 		packetData.writeBigInt64LE(uniqueId); // Unique ID
@@ -204,13 +178,13 @@ class Payload {
 
 	sendCommandRequest(command) {
 		const packetHeader = new BinaryStream();
-		packetHeader.writeVarInt(this.createPacketId(77, 0, this.subclientId));
+		packetHeader.writeVarInt(this.createPacketId(PacketIds.COMMAND_REQUEST, 0, this.subclientId));
 
 		const packetData = new BinaryStream();
 		packetData.writeVarintString(command); // Command
 
 		// Command Origin
-		packetData.writeVarInt(0); // Origin Source
+		packetData.writeVarInt(CommandOriginType.PLAYER); // Origin Source
 		packetData.writeUuid(UUID.v4()); // UUID
 		packetData.writeVarintString(""); // Request ID
 
@@ -227,22 +201,21 @@ class Payload {
 
 	sendRequestPermissions(uniqueId, permissionLevel = 4) {
 		const packetHeader = new BinaryStream();
-		// Send RequestPermissions packet (ID 185) for sub-client ID 1
-		packetHeader.writeVarInt(this.createPacketId(185, 0, this.subclientId));
+		packetHeader.writeVarInt(this.createPacketId(PacketIds.REQUEST_PERMISSIONS, 0, this.subclientId));
 
 		const packetData = new BinaryStream();
 		packetData.writeBigInt64LE(uniqueId); // Unique ID
-		packetData.writeVarInt(permissionLevel); // Permission level
+		packetData.writeVarInt(permissionLevel); // Permission level, values here do not match the values of the PermissionLevel enum
 		// Bitfield representation of available abilities
 		packetData.writeUInt16LE(
-			(1 << 0) | // Build
-			(1 << 1) | // Mine
-			(1 << 2) | // Doors and Switches
-			(1 << 3) | // Open Containers
-			(1 << 4) | // Attack Players
-			(1 << 5) | // Attack Mobs
-			(1 << 6) | // Operator
-			(1 << 7)   // Teleport
+			PermissionFlags.BUILD |
+			PermissionFlags.MINE |
+			PermissionFlags.DOORS_AND_SWITCHES |
+			PermissionFlags.OPEN_CONTAINERS |
+			PermissionFlags.ATTACK_PLAYERS |
+			PermissionFlags.ATTACK_MOBS |
+			PermissionFlags.OPERATOR |
+			PermissionFlags.TELEPORT
 		);
 
 		packetHeader.writeBuffer(packetData.toBuffer());
